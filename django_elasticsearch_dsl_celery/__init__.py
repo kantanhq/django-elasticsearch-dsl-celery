@@ -1,11 +1,17 @@
 from celery import shared_task
 from django.apps import apps
+from django.conf import settings
 from django.db import transaction
 from django_elasticsearch_dsl.registries import registry
 from django_elasticsearch_dsl.signals import RealTimeSignalProcessor
 
 
-@shared_task
+@shared_task(
+    queue=settings.ELASTICSEARCH_DSL_CELERY_QUEUE,
+    ignore_result=True,
+    retry_backoff=True,
+    max_retries=4,
+)
 def handle_save(pk,  app_label, model_name):
     sender = apps.get_model(app_label, model_name)
     instance = sender.objects.get(pk=pk)
@@ -13,14 +19,24 @@ def handle_save(pk,  app_label, model_name):
     registry.update_related(instance)
 
 
-@shared_task
+@shared_task(
+    queue=settings.ELASTICSEARCH_DSL_CELERY_QUEUE,
+    ignore_result=True,
+    retry_backoff=True,
+    max_retries=4,
+)
 def handle_pre_delete(pk,  app_label, model_name):
     sender = apps.get_model(app_label, model_name)
     instance = sender.objects.get(pk=pk)
     registry.delete_related(instance)
 
 
-@shared_task
+@shared_task(
+    queue=settings.ELASTICSEARCH_DSL_CELERY_QUEUE,
+    ignore_result=True,
+    retry_backoff=True,
+    max_retries=4,
+)
 def handle_delete(pk,  app_label, model_name):
     sender = apps.get_model(app_label, model_name)
     instance = sender.objects.get(pk=pk)
